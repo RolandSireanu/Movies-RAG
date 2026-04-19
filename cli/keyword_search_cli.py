@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 from inverted_index import InvertedIndex
 from text_processor import preprocess_text
 
@@ -26,6 +27,10 @@ def main() -> None:
 
     idf_parser = subparsers.add_parser("idf", help="Get the idf value of a term")
     idf_parser.add_argument("term", type=str, help="Term to compute the idf value for")
+
+    tfidf_parser = subparsers.add_parser("tfidf", help="Get the TF-IDF score for a term in a document")
+    tfidf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tfidf_parser.add_argument("term", type=str, help="Term to compute the TF-IDF score for")
 
     args = parser.parse_args()
 
@@ -60,23 +65,24 @@ def main() -> None:
             invIndex.get_tf(args.doc_id, args.term)
         case "idf":
             invIndex.idf(args.term)
+        case "tfidf":
+            try:
+                invIndex.load()
+            except FileNotFoundError:
+                print("Error: First you have to build and save the inverted index")
+                return
+            tokens = preprocess_text(args.term)
+            if not tokens:
+                print("0.00")
+                return
+            stemmed_term = tokens[0]
+            tf = invIndex.term_frequencies[args.doc_id][stemmed_term]
+            matching_docs = len(invIndex.index.get(stemmed_term, set()))
+            total_docs = len(invIndex.docmap)
+            idf = math.log((total_docs + 1) / (matching_docs + 1))
+            print(f"{tf * idf:.2f}")
         case _:
-            parser.print_help()    
-    
-
-
-
-    # result_list = []
-    # for movie in moviesDB["movies"]:                
-    #     # if args.query.lower() in movie["title"].lower():
-    #     if match_logic(preprocess_text(args.query), preprocess_text(movie["title"])):
-    #         result_list.append(movie["title"])
-        
-            
-    # for index, movie in enumerate(result_list, start=1):
-    #     print(f"{index}. "+movie)
-            
-    # result_list = result_list[:5]
+            parser.print_help()
     
 
 if __name__ == "__main__":
