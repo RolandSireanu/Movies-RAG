@@ -28,6 +28,9 @@ def main() -> None:
     idf_parser = subparsers.add_parser("idf", help="Get the idf value of a term")
     idf_parser.add_argument("term", type=str, help="Term to compute the idf value for")
 
+    bm25_idf_parser = subparsers.add_parser("bm25idf", help="Get BM25 IDF score for a given term")
+    bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+
     tfidf_parser = subparsers.add_parser("tfidf", help="Get the TF-IDF score for a term in a document")
     tfidf_parser.add_argument("doc_id", type=int, help="Document ID")
     tfidf_parser.add_argument("term", type=str, help="Term to compute the TF-IDF score for")
@@ -65,6 +68,9 @@ def main() -> None:
             invIndex.get_tf(args.doc_id, args.term)
         case "idf":
             invIndex.idf(args.term)
+        case "bm25idf":
+            bm25idf = invIndex.bm25_idf_command(args.term)
+            print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
         case "tfidf":
             try:
                 invIndex.load()

@@ -70,6 +70,21 @@ class InvertedIndex:
         idf_value = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
         print(f"Inverse document frequency of '{term}': {idf_value:.2f}")
 
+    def get_bm25_idf(self, term: str) -> float:
+        """Return the BM25 IDF score for a single term."""
+        tokens = preprocess_text(term)
+        if len(tokens) != 1:
+            raise ValueError(f"Expected a single token, got {len(tokens)}: {tokens}")
+        stemmed = tokens[0]
+        df = len(self.index.get(stemmed, set()))
+        n = len(self.docmap)
+        return math.log((n - df + 0.5) / (df + 0.5) + 1)
+
+    def bm25_idf_command(self, term: str) -> float:
+        """Load the index from disk and return the BM25 IDF score for term."""
+        self.load()
+        return self.get_bm25_idf(term)
+
     def get_documents(self, term):
         """Return a sorted list of doc IDs containing the given term."""
         return sorted(self.index.get(term.lower(), set()))
