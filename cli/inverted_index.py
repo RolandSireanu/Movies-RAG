@@ -6,6 +6,7 @@ import pickle
 from collections import Counter, defaultdict
 
 from text_processor import preprocess_text
+from constants import BM25_K1
 
 
 class InvertedIndex:
@@ -52,14 +53,25 @@ class InvertedIndex:
             raise FileNotFoundError()
 
     def get_tf(self, doc_id, term):
-        """Print the term frequency of a single term in the given document."""
+        """Print and return the term frequency of a single term in the given document."""
         self.load()
         term_list = preprocess_text(term)
         if len(term_list) > 1:
-            raise Exception("More than one token given to get_rf")
+            raise Exception("More than one token given to get_tf")
 
         term_freq = self.term_frequencies[doc_id][term_list[0]]
         print(f"{term_list[0]} appeared {term_freq} times")
+        return term_freq
+
+    def get_bm25_tf(self, doc_id: int, term: str, k1: float = BM25_K1) -> float:
+        """Return the BM25 saturated term frequency for a term in a document."""
+        tf = self.get_tf(doc_id, term)
+        return (tf * (k1 + 1)) / (tf + k1)
+
+    def bm25_tf_command(self, doc_id: int, term: str, k1: float = BM25_K1) -> float:
+        """Load the index from disk and return the BM25 TF score."""
+        self.load()
+        return self.get_bm25_tf(doc_id, term, k1)
 
     def idf(self, term):
         """Print the inverse document frequency of a term."""
