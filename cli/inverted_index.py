@@ -38,7 +38,7 @@ class InvertedIndex:
 
     def load(self):
         """Load index, docmap, and term frequencies from disk if not already loaded."""
-        self.__load_pickle(self.index_pkl_path)
+        self.__load_pickle(self.index_pkl_path, "index")
         self.__load_pickle(self.docmap_pkl_path, "docmap")
         self.__load_pickle(self.term_frequencies_pkl_path, "term_frequencies")
 
@@ -46,7 +46,7 @@ class InvertedIndex:
         """ Load the pickle file into specified attribute"""
         if os.path.exists(pickle_path):
             if not getattr(self, attr):
-                with open(self.pickle_path, "rb") as f:
+                with open(pickle_path, "rb") as f:
                     setattr(self, attr, pickle.load(f)) 
         else:
             raise FileNotFoundError()
