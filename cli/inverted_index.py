@@ -6,7 +6,7 @@ import pickle
 from collections import Counter, defaultdict
 
 from text_processor import preprocess_text
-from constants import BM25_K1
+from constants import BM25_K1, BM25_B
 
 
 class InvertedIndex:
@@ -16,9 +16,11 @@ class InvertedIndex:
         self.index: dict[str, set[int]] = {}
         self.docmap: dict[int, str] = {}
         self.term_frequencies: defaultdict[int, Counter] = defaultdict(Counter)
+        self.doc_lengths: dict[int, int] = {}
         self.index_pkl_path = "cache/index.pkl"
         self.docmap_pkl_path = "cache/docmap.pkl"
         self.term_frequencies_pkl_path = "cache/term_frequencies.pkl"
+        self.doc_lengths_path = "cache/doc_lengths.pkl"
 
     def build(self, arg_movies: list[dict[int | str, str]]):
         """Build the inverted index from a list of movie dicts."""
@@ -36,12 +38,15 @@ class InvertedIndex:
             pickle.dump(self.docmap, f)
         with open(self.term_frequencies_pkl_path, "wb") as f:
             pickle.dump(self.term_frequencies, f)
+        with open(self.doc_lengths_path, "wb") as f:
+            pickle.dump(self.doc_lengths, f)
 
     def load(self):
         """Load index, docmap, and term frequencies from disk if not already loaded."""
         self.__load_pickle(self.index_pkl_path, "index")
         self.__load_pickle(self.docmap_pkl_path, "docmap")
         self.__load_pickle(self.term_frequencies_pkl_path, "term_frequencies")
+        self.__load_pickle(self.doc_lengths_path, "doc_lengths")
 
     def __load_pickle(self, pickle_path, attr):
         """ Load the pickle file into specified attribute"""
@@ -63,15 +68,24 @@ class InvertedIndex:
         print(f"{term_list[0]} appeared {term_freq} times")
         return term_freq
 
-    def get_bm25_tf(self, doc_id: int, term: str, k1: float = BM25_K1) -> float:
-        """Return the BM25 saturated term frequency for a term in a document."""
-        tf = self.get_tf(doc_id, term)
-        return (tf * (k1 + 1)) / (tf + k1)
+    def __get_avg_doc_length(self) -> float:
+        """Return the average document length across all documents."""
+        if not self.doc_lengths:
+            return 0.0
+        return sum(self.doc_lengths.values()) / len(self.doc_lengths)
 
-    def bm25_tf_command(self, doc_id: int, term: str, k1: float = BM25_K1) -> float:
+    def get_bm25_tf(self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B) -> float:
+        """Return the BM25 saturated and length-normalized term frequency."""
+        tf = self.get_tf(doc_id, term)
+        doc_length = self.doc_lengths.get(doc_id, 0)
+        avg_doc_length = self.__get_avg_doc_length()
+        length_norm = 1 - b + b * (doc_length / avg_doc_length) if avg_doc_length else 1.0
+        return (tf * (k1 + 1)) / (tf + k1 * length_norm)
+
+    def bm25_tf_command(self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B) -> float:
         """Load the index from disk and return the BM25 TF score."""
         self.load()
-        return self.get_bm25_tf(doc_id, term, k1)
+        return self.get_bm25_tf(doc_id, term, k1, b)
 
     def idf(self, term):
         """Print the inverse document frequency of a term."""
@@ -103,7 +117,8 @@ class InvertedIndex:
 
     def __add_document(self, doc_id: int, text: str):
         """Tokenize text and add tokens to the index and term frequency map."""
-        text = preprocess_text(text)
-        for token in text:
+        tokens = preprocess_text(text)
+        self.doc_lengths[doc_id] = len(tokens)
+        for token in tokens:
             self.term_frequencies[doc_id][token] += 1
             self.index.setdefault(token, set()).add(doc_id)

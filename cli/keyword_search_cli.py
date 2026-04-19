@@ -1,7 +1,7 @@
 import argparse
 import json
 import math
-from constants import BM25_K1
+from constants import BM25_K1, BM25_B
 from inverted_index import InvertedIndex
 from text_processor import preprocess_text
 
@@ -33,6 +33,7 @@ def main() -> None:
     bm25_tf_parser.add_argument("doc_id", type=int, help="Document ID")
     bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
+    bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
 
     bm25_idf_parser = subparsers.add_parser("bm25idf", help="Get BM25 IDF score for a given term")
     bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
@@ -75,7 +76,7 @@ def main() -> None:
         case "idf":
             invIndex.idf(args.term)
         case "bm25tf":
-            bm25tf = invIndex.bm25_tf_command(args.doc_id, args.term, args.k1)
+            bm25tf = invIndex.bm25_tf_command(args.doc_id, args.term, args.k1, args.b)
             print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
         case "bm25idf":
             bm25idf = invIndex.bm25_idf_command(args.term)
