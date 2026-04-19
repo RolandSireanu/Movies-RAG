@@ -29,7 +29,6 @@ STOP_WORDS = {
 
 def preprocess_text(arg_text) -> str:
     stemmer = SnowballStemmer("english")
-    
     arg_text = arg_text.lower()
     arg_text = arg_text.translate(str.maketrans("", "", string.punctuation))
     arg_text_list = arg_text.split()

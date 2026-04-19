@@ -1,6 +1,5 @@
 import argparse
 import json
-import ipdb
 from inverted_index import InvertedIndex
 from text_processor import preprocess_text
 
@@ -20,6 +19,13 @@ def main() -> None:
 
     build_parser = subparsers.add_parser("build", help="Builds the inverted index and save it to disk")
     build_parser.add_argument("build", action="store_true", help="Build inverted index")
+
+    tf_parser = subparsers.add_parser("tf", help="Get the frequency of specified term")
+    tf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tf_parser.add_argument("term", type=str, help="Term to search for")
+
+    idf_parser = subparsers.add_parser("idf", help="Get the idf value of a term")
+    idf_parser.add_argument("term", type=str, help="Term to compute the idf value for")
 
     args = parser.parse_args()
 
@@ -50,6 +56,10 @@ def main() -> None:
             invIndex.build(moviesDB["movies"])
             invIndex.save()
             print(f"First document for token 'merida' = {invIndex.get_documents("merida")[0]}")
+        case "tf":
+            invIndex.get_tf(args.doc_id, args.term)
+        case "idf":
+            invIndex.idf(args.term)
         case _:
             parser.print_help()    
     
